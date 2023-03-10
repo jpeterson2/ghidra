@@ -13,6 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+plugins {
+    // Checker Framework pluggable type-checking
+    id 'org.checkerframework' version '0.6.25'
+}
+
 apply from: "${rootProject.projectDir}/gradle/javaProject.gradle"
 apply from: "${rootProject.projectDir}/gradle/jacocoProject.gradle"
 apply from: "${rootProject.projectDir}/gradle/javaTestProject.gradle"
@@ -20,6 +25,14 @@ apply from: "${rootProject.projectDir}/gradle/distributableGhidraModule.gradle"
 
 apply plugin: 'eclipse'
 eclipse.project.name = 'Framework Emulation'
+
+apply plugin: 'org.checkerframework'
+
+checkerFramework {
+  checkers = [
+    'org.checkerframework.checker.signedness.SignednessChecker'
+  ]
+}
 
 dependencies {
 	api project(':SoftwareModeling')
