@@ -15,6 +15,8 @@
  */
 package generic;
 
+import org.checkerframework.checker.signedness.qual.Unsigned;
+
 /**
  * A span of unsigned longs
  * 
@@ -36,8 +38,8 @@ public interface ULongSpan extends Span<Long, ULongSpan> {
 	 * @return the span
 	 * @throws IllegalArgumentException if {@code max < min}
 	 */
-	public static ULongSpan span(long min, long max) {
-		return DOMAIN.closed(min, max);
+	public static ULongSpan span(@Unsigned long min, @Unsigned long max) {
+		return DOMAIN.closed(min, max); // Valid
 	}
 
 	/**
@@ -48,8 +50,8 @@ public interface ULongSpan extends Span<Long, ULongSpan> {
 	 * @return the span
 	 * @throws IllegalArgumentException if the upper endpoint would exceed {@link Domain#max()}
 	 */
-	public static ULongSpan extent(long min, long length) {
-		return DOMAIN.closed(min, min + length - 1);
+	public static ULongSpan extent(@Unsigned long min, @Unsigned long length) {
+		return DOMAIN.closed(min, min + length - 1); // Valid
 	}
 
 	/**
@@ -64,18 +66,18 @@ public interface ULongSpan extends Span<Long, ULongSpan> {
 	 * @return the span
 	 * @throws IllegalArgumentException if the upper endpoint would exceed {@link Domain#max()}
 	 */
-	public static ULongSpan extent(long min, int length) {
+	public static ULongSpan extent(@Unsigned long min, @Unsigned int length) {
 		return extent(min, Integer.toUnsignedLong(length));
 	}
 
 	/**
 	 * The domain of unsigned longs
 	 */
-	public enum Domain implements Span.Domain<Long, ULongSpan> {
+	public enum Domain implements Span.Domain<@Unsigned Long, ULongSpan> {
 		INSTANCE;
 
 		@Override
-		public ULongSpan newSpan(Long min, Long max) {
+		public ULongSpan newSpan(@Unsigned Long min, @Unsigned Long max) {
 			return new Impl(min, max);
 		}
 
@@ -90,32 +92,32 @@ public interface ULongSpan extends Span<Long, ULongSpan> {
 		}
 
 		@Override
-		public String toString(Long n) {
+		public String toString(@Unsigned Long n) {
 			return Long.toUnsignedString(n);
 		}
 
 		@Override
-		public int compare(Long n1, Long n2) {
+		public int compare(@Unsigned Long n1, @Unsigned Long n2) {
 			return Long.compareUnsigned(n1, n2);
 		}
 
 		@Override
-		public Long min() {
+		public @Unsigned Long min() {
 			return 0L;
 		}
 
 		@Override
-		public Long max() {
+		public @Unsigned Long max() {
 			return -1L;
 		}
 
 		@Override
-		public Long inc(Long n) {
+		public @Unsigned Long inc(Long n) {
 			return n + 1;
 		}
 
 		@Override
-		public Long dec(Long n) {
+		public @Unsigned Long dec(Long n) {
 			return n - 1;
 		}
 	}
@@ -148,7 +150,7 @@ public interface ULongSpan extends Span<Long, ULongSpan> {
 	/**
 	 * A non-empty span of unsigned longs
 	 */
-	record Impl(Long min, Long max) implements ULongSpan {
+	record Impl(@Unsigned Long min, @Unsigned Long max) implements ULongSpan {
 		@Override
 		public String toString() {
 			return doToString();
@@ -222,7 +224,7 @@ public interface ULongSpan extends Span<Long, ULongSpan> {
 	 * 
 	 * @return the length
 	 */
-	default long length() {
+	default @Unsigned long length() {
 		return max() - min() + 1;
 	}
 }

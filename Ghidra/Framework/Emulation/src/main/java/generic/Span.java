@@ -1080,7 +1080,7 @@ public interface Span<N, S extends Span<N, S>> extends Comparable<S> {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"unchecked", "signedness:argument"})
 	default String doToString() {
 		return domain().toString((S) this);
 	}
@@ -1156,7 +1156,7 @@ public interface Span<N, S extends Span<N, S>> extends Comparable<S> {
 	 * @return the intersection, possibly empty
 	 * @see Domain#intersect(Span, Span)
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"unchecked", "signedness:argument"})
 	default S intersect(S s) {
 		return domain().intersect((S) this, s);
 	}
@@ -1168,7 +1168,7 @@ public interface Span<N, S extends Span<N, S>> extends Comparable<S> {
 	 * @return true if they intersect
 	 * @see Domain#intersects(Span, Span)
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"unchecked", "signedness:argument"})
 	default boolean intersects(S s) {
 		return domain().intersects((S) this, s);
 	}
@@ -1179,7 +1179,7 @@ public interface Span<N, S extends Span<N, S>> extends Comparable<S> {
 	 * @param s another span
 	 * @return true if this encloses the given span
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"unchecked", "signedness:argument"})
 	default boolean encloses(S s) {
 		return domain().encloses((S) this, s);
 	}
@@ -1191,7 +1191,7 @@ public interface Span<N, S extends Span<N, S>> extends Comparable<S> {
 	 * @return the bound
 	 * @see Domain#bound(Span, Span)
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"unchecked", "signedness:argument"})
 	default S bound(S s) {
 		return domain().bound((S) this, s);
 	}
@@ -1202,7 +1202,7 @@ public interface Span<N, S extends Span<N, S>> extends Comparable<S> {
 	 * @param s the span to subtract
 	 * @return 0, 1, or 2 spans resulting from the subtraction
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"unchecked", "signedness:argument"})
 	default List<S> subtract(S s) {
 		return domain().subtract((S) this, s);
 	}

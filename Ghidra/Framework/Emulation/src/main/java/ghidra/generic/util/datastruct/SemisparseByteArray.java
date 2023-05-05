@@ -25,6 +25,8 @@ import generic.ULongSpan;
 import generic.ULongSpan.*;
 import ghidra.util.MathUtilities;
 
+import org.checkerframework.checker.signedness.qual.Unsigned;
+
 /**
  * A sparse byte array characterized by contiguous dense regions
  * 
@@ -110,7 +112,7 @@ public class SemisparseByteArray {
 	 * @param loc the index to begin copying data out
 	 * @param data the array to copy data into
 	 */
-	public synchronized void getData(long loc, byte[] data) {
+	public synchronized void getData(@Unsigned long loc, byte[] data) {
 		getData(loc, data, 0, data.length);
 	}
 
@@ -130,14 +132,14 @@ public class SemisparseByteArray {
 	 * @param offset the offset into the destination array
 	 * @param length the length of data to read
 	 */
-	public synchronized void getData(final long loc, final byte[] data, final int offset,
+	public synchronized void getData(final @Unsigned long loc, final byte[] data, final int offset,
 			final int length) {
 		if (length < 0) {
-			throw new IllegalArgumentException("length: " + length);
+			throw new IllegalArgumentException("length: " + length); // correct :D
 		}
 		// Read in portion of first block (could be full block)
-		long blockNum = Long.divideUnsigned(loc, BLOCK_SIZE);
-		int blockOffset = (int) Long.remainderUnsigned(loc, BLOCK_SIZE);
+		long blockNum = Long.divideUnsigned(loc, BLOCK_SIZE); // blockNum is technically signedpositive here - block_size is sufficiently large to ensure this
+		int blockOffset = (@Signed int) Long.remainderUnsigned(loc, BLOCK_SIZE);
 		byte[] block = blocks.get(blockNum);
 		int amt = Math.min(length, BLOCK_SIZE - blockOffset);
 		if (block != null) {
@@ -148,10 +150,10 @@ public class SemisparseByteArray {
 		int cur = amt;
 		while (cur < length) {
 			blockNum++;
-			if (blockNum == 0) {
+			if (blockNum == 0) { // blockNum appears to be unsigned (can't happen?????)
 				throw new BufferUnderflowException();
 			}
-			block = blocks.get(blockNum);
+			block = blocks.get(blockNum); // map (hence semisparse)
 			amt = Math.min(length - cur, BLOCK_SIZE);
 			if (block != null) {
 				System.arraycopy(block, 0, data, cur + offset, amt);
@@ -170,7 +172,7 @@ public class SemisparseByteArray {
 	 * @param b the upper-bound, inclusive, of the range
 	 * @return the set of initialized ranges
 	 */
-	public synchronized ULongSpanSet getInitialized(long a, long b) {
+	public synchronized ULongSpanSet getInitialized(@Unsigned long a, @Unsigned long b) {
 		MutableULongSpanSet result = new DefaultULongSpanSet();
 		ULongSpan query = ULongSpan.span(a, b);
 		for (ULongSpan span : defined.intersecting(query)) {
@@ -189,7 +191,7 @@ public class SemisparseByteArray {
 	 * @param b the upper-bound, inclusive, of the range
 	 * @return true if all indices in the range are initialized, false otherwise
 	 */
-	public synchronized boolean isInitialized(long a, long b) {
+	public synchronized boolean isInitialized(@Unsigned long a, @Unsigned long b) {
 		return defined.encloses(ULongSpan.span(a, b));
 	}
 
@@ -199,8 +201,8 @@ public class SemisparseByteArray {
 	 * @param a the index to check
 	 * @return true if the index is initialized, false otherwise
 	 */
-	public synchronized boolean isInitialized(long a) {
-		return defined.contains(a);
+	public synchronized boolean isInitialized(@Unsigned long a) {
+		return defined.contains(a); // :(
 	}
 
 	/**
@@ -213,7 +215,7 @@ public class SemisparseByteArray {
 	 * @param b the upper-bound, inclusive, of the range
 	 * @return the set of uninitialized ranges
 	 */
-	public synchronized ULongSpanSet getUninitialized(long a, long b) {
+	public synchronized ULongSpanSet getUninitialized(@Unsigned long a, @Unsigned long b) {
 		MutableULongSpanSet result = new DefaultULongSpanSet();
 		for (ULongSpan s : defined.complement(ULongSpan.span(a, b))) {
 			result.add(s);
@@ -228,7 +230,7 @@ public class SemisparseByteArray {
 	 * @param loc the index of the semisparse array to begin copying into
 	 * @param data the data to copy
 	 */
-	public synchronized void putData(long loc, byte[] data) {
+	public synchronized void putData(@Unsigned long loc, byte[] data) {
 		putData(loc, data, 0, data.length);
 	}
 
@@ -240,10 +242,10 @@ public class SemisparseByteArray {
 	 * @param offset the offset of the source array to begin copying from
 	 * @param length the length of data to copy
 	 */
-	public synchronized void putData(final long loc, final byte[] data, final int offset,
+	public synchronized void putData(final @Unsigned long loc, final byte[] data, final int offset,
 			final int length) {
 		if (length == 0) {
-			return;
+			return; // not good >:( (I think actually bad tbh)
 		}
 		defined.add(ULongSpan.extent(loc, length));
 
@@ -278,7 +280,7 @@ public class SemisparseByteArray {
 		for (ULongSpan span : from.defined.spans()) {
 			long lower = span.min();
 			long length = span.length();
-			for (long i = 0; Long.compareUnsigned(i, length) < 0;) {
+			for (@Unsigned long i = 0; Long.compareUnsigned(i, length) < 0;) {
 				int l = MathUtilities.unsignedMin(temp.length, length - i);
 				from.getData(lower + i, temp, 0, l);
 				this.putData(lower + i, temp, 0, l);
@@ -293,12 +295,12 @@ public class SemisparseByteArray {
 	 * @param loc the starting offset
 	 * @return the number of contiguous defined bytes following
 	 */
-	public synchronized int contiguousAvailableAfter(long loc) {
+	public synchronized int contiguousAvailableAfter(@Unsigned long loc) {
 		ULongSpan span = defined.spanContaining(loc);
 		if (span == null) {
 			return 0;
 		}
-		long diff = span.max() - loc + 1;
+		@Unsigned long diff = span.max() - loc + 1;
 		return MathUtilities.unsignedMin(Integer.MAX_VALUE, diff);
 	}
 }
