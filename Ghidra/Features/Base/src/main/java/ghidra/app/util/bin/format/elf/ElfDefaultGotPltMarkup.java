@@ -79,7 +79,7 @@ public class ElfDefaultGotPltMarkup {
 		// look for .got section blocks
 		MemoryBlock[] blocks = memory.getBlocks();
 		for (MemoryBlock gotBlock : blocks) {
-			monitor.checkCanceled();
+			monitor.checkCancelled();
 
 			if (!gotBlock.getName().startsWith(ElfSectionHeaderConstants.dot_got)) {
 				continue;
@@ -506,8 +506,8 @@ public class ElfDefaultGotPltMarkup {
 
 	/**
 	 * Convert all symbols over a specified range to thunks to external functions. 
-	 * @param minAddress
-	 * @param maxAddress
+	 * @param minAddress range minimum address
+	 * @param maxAddress range maximum address (inclusive)
 	 * @return number of symbols converted
 	 */
 	private int convertSymbolsToExternalFunctions(Address minAddress, Address maxAddress) {
@@ -545,7 +545,7 @@ public class ElfDefaultGotPltMarkup {
 		Disassembler disassembler = Disassembler.getDisassembler(prog, monitor, m -> {
 			/* silent */});
 		while (!set.isEmpty()) {
-			monitor.checkCanceled();
+			monitor.checkCancelled();
 			AddressSet disset = disassembler.disassemble(set.getMinAddress(), null, true);
 			if (disset.isEmpty()) {
 				// Stop on first error but discard error bookmark since

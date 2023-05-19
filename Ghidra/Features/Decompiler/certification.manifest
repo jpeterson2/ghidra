@@ -31,6 +31,7 @@ src/decompile/datatests/impliedfield.xml||GHIDRA||||END|
 src/decompile/datatests/indproto.xml||GHIDRA||||END|
 src/decompile/datatests/injectoverride.xml||GHIDRA||||END|
 src/decompile/datatests/loopcomment.xml||GHIDRA||||END|
+src/decompile/datatests/lzcount.xml||GHIDRA||||END|
 src/decompile/datatests/mixfloatint.xml||GHIDRA||||END|
 src/decompile/datatests/modulo.xml||GHIDRA||||END|
 src/decompile/datatests/modulo2.xml||GHIDRA||||END|
@@ -43,12 +44,15 @@ src/decompile/datatests/noforloop_iterused.xml||GHIDRA||||END|
 src/decompile/datatests/offsetarray.xml||GHIDRA||||END|
 src/decompile/datatests/packstructaccess.xml||GHIDRA||||END|
 src/decompile/datatests/partialmerge.xml||GHIDRA||||END|
+src/decompile/datatests/partialsplit.xml||GHIDRA||||END|
 src/decompile/datatests/partialunion.xml||GHIDRA||||END|
+src/decompile/datatests/piecestruct.xml||GHIDRA||||END|
 src/decompile/datatests/pointercmp.xml||GHIDRA||||END|
 src/decompile/datatests/pointerrel.xml||GHIDRA||||END|
 src/decompile/datatests/pointersub.xml||GHIDRA||||END|
 src/decompile/datatests/promotecompare.xml||GHIDRA||||END|
 src/decompile/datatests/readvolatile.xml||GHIDRA||||END|
+src/decompile/datatests/retstruct.xml||GHIDRA||||END|
 src/decompile/datatests/sbyte.xml||GHIDRA||||END|
 src/decompile/datatests/skipnext2.xml||GHIDRA||||END|
 src/decompile/datatests/statuscmp.xml||GHIDRA||||END|

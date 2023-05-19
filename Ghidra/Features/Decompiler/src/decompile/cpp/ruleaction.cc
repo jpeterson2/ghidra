@@ -18,6 +18,8 @@
 #include "subflow.hh"
 #include "rangeutil.hh"
 
+namespace ghidra {
+
 /// \class RuleEarlyRemoval
 /// \brief Get rid of unused PcodeOp objects where we can guarantee the output is unused
 int4 RuleEarlyRemoval::applyOp(PcodeOp *op,Funcdata &data)
@@ -1685,6 +1687,44 @@ int4 RuleAndPiece::applyOp(PcodeOp *op,Funcdata &data)
   return 1;
 }
 
+/// \class RuleAndZext
+/// \brief Convert INT_AND to INT_ZEXT where appropriate: `sext(X) & 0xffff  =>  zext(X)`
+///
+/// Similarly `concat(Y,X) & 0xffff  =>  zext(X)`
+void RuleAndZext::getOpList(vector<uint4> &oplist) const
+
+{
+  oplist.push_back(CPUI_INT_AND);
+}
+
+int4 RuleAndZext::applyOp(PcodeOp *op,Funcdata &data)
+
+{
+  Varnode *cvn1 = op->getIn(1);
+  if (!cvn1->isConstant()) return 0;
+  if (!op->getIn(0)->isWritten()) return 0;
+  PcodeOp *otherop = op->getIn(0)->getDef();
+  OpCode opc = otherop->code();
+  Varnode *rootvn;
+  if (opc == CPUI_INT_SEXT)
+    rootvn = otherop->getIn(0);
+  else if (opc == CPUI_PIECE)
+    rootvn = otherop->getIn(1);
+  else
+    return 0;
+  uintb mask = calc_mask(rootvn->getSize());
+  if (mask != cvn1->getOffset())
+    return 0;
+  if (rootvn->isFree())
+    return 0;
+  if (rootvn->getSize() > sizeof(uintb))	// FIXME: Should be arbitrary precision
+    return 0;
+  data.opSetOpcode(op, CPUI_INT_ZEXT);
+  data.opRemoveInput(op, 1);
+  data.opSetInput(op, rootvn, 0);
+  return 1;
+}
+
 /// \class RuleAndCompare
 /// \brief Simplify INT_ZEXT and SUBPIECE in masked comparison: `zext(V) & c == 0  =>  V & (c & mask) == 0`
 ///
@@ -1830,7 +1870,7 @@ int4 RuleDoubleShift::applyOp(PcodeOp *op,Funcdata &data)
     sa2 = secop->getIn(1)->getOffset();
   if (opc1 == opc2) {
     if (sa1 + sa2 < 8*size) {
-      newvn = data.newConstant(size,sa1+sa2);
+      newvn = data.newConstant(4,sa1+sa2);
       data.opSetOpcode(op,opc1);
       data.opSetInput(op,secop->getIn(0),0);
       data.opSetInput(op,newvn,1);
@@ -1842,7 +1882,7 @@ int4 RuleDoubleShift::applyOp(PcodeOp *op,Funcdata &data)
       data.opRemoveInput(op,1);
     }
   }
-  else if (sa1 == sa2) {
+  else if (sa1 == sa2 && size <= sizeof(uintb)) {	// FIXME:  precision
     mask = calc_mask(size);
     if (opc1 == CPUI_INT_LEFT)
       mask = (mask<<sa1) & mask;
@@ -3388,7 +3428,7 @@ int4 RuleShift2Mult::applyOp(PcodeOp *op,Funcdata &data)
 /// \brief Convert "shift and add" to PIECE:  (zext(V) << 16) + zext(W)  =>  concat(V,W)
 ///
 /// The \e add operation can be INT_ADD, INT_OR, or INT_XOR. If the extension size is bigger
-/// than the concatentation size, the concatentation can be zero extended.
+/// than the concatenation size, the concatenation can be zero extended.
 /// This also supports other special forms where a value gets
 /// concatenated with its own sign extension bits.
 ///
@@ -4269,6 +4309,9 @@ int4 RuleConcatCommute::applyOp(PcodeOp *op,Funcdata &data)
   OpCode opc;
   uintb val;
 
+  int4 outsz = op->getOut()->getSize();
+  if (outsz > sizeof(uintb))
+    return 0;			// FIXME:  precision problem for constants
   for(int4 i=0;i<2;++i) {
     vn = op->getIn(i);
     if (!vn->isWritten()) continue;
@@ -4308,7 +4351,7 @@ int4 RuleConcatCommute::applyOp(PcodeOp *op,Funcdata &data)
     if (lo->isFree()) continue;
     newconcat = data.newOp(2,op->getAddr());
     data.opSetOpcode(newconcat,CPUI_PIECE);
-    newvn = data.newUniqueOut(op->getOut()->getSize(),newconcat);
+    newvn = data.newUniqueOut(outsz,newconcat);
     data.opSetInput(newconcat,hi,0);
     data.opSetInput(newconcat,lo,1);
     data.opInsertBefore(newconcat,op);
@@ -5312,7 +5355,7 @@ int4 RuleSLess2Zero::applyOp(PcodeOp *op,Funcdata &data)
       }
       else if (feedOpCode == CPUI_SUBPIECE) {
 	avn = feedOp->getIn(0);
-	if (avn->isFree())
+	if (avn->isFree() || avn->getSize() > 8)	// Don't create comparison bigger than 8 bytes
 	  return 0;
 	if (rvn->getSize() + (int4) feedOp->getIn(1)->getOffset() == avn->getSize()) {
 	  // We have -1 s< SUB( avn, #hi )
@@ -5384,7 +5427,8 @@ int4 RuleSLess2Zero::applyOp(PcodeOp *op,Funcdata &data)
 	}
 	else if (feedOpCode == CPUI_SUBPIECE) {
 	  avn = feedOp->getIn(0);
-	  if (avn->isFree()) return 0;
+	  if (avn->isFree() || avn->getSize() > 8)	// Don't create comparison greater than 8 bytes
+	    return 0;
 	  if (lvn->getSize() + (int4)feedOp->getIn(1)->getOffset() == avn->getSize()) {
 	    // We have SUB( avn, #hi ) s< 0
 	    data.opSetInput(op,avn,0);
@@ -6965,6 +7009,7 @@ bool RulePieceStructure::separateSymbol(Varnode *root,Varnode *leaf)
   if (!leaf->isWritten()) return true;	// Assume to be different symbols
   if (leaf->isProtoPartial()) return true;	// Already in another tree
   PcodeOp *op = leaf->getDef();
+  if (op->isMarker()) return true;	// Leaf is not defined locally
   if (op->code() != CPUI_PIECE) return false;
   if (leaf->getType()->isPieceStructured()) return true;	// Would be a separate root
 
@@ -7025,6 +7070,7 @@ int4 RulePieceStructure::applyOp(PcodeOp *op,Funcdata &data)
     PieceNode &node(stack[i]);
     Varnode *vn = node.getVarnode();
     Address addr = baseAddr + node.getTypeOffset();
+    addr.renormalize(vn->getSize());		// Allow for possible join address
     if (vn->getAddr() == addr) {
       if (!node.isLeaf() || !separateSymbol(outvn, vn)) {
 	// Varnode already has correct address and will be part of the same symbol as root
@@ -7075,6 +7121,86 @@ int4 RulePieceStructure::applyOp(PcodeOp *op,Funcdata &data)
   if (!anyAddrTied)
     data.getMerge().registerProtoPartialRoot(outvn);
   return 1;
+}
+
+/// \class RuleSplitCopy
+/// \brief Split COPY ops based on TypePartialStruct
+///
+/// If more than one logical component of a structure or array is copied at once,
+/// rewrite the COPY operator as multiple COPYs.
+void RuleSplitCopy::getOpList(vector<uint4> &oplist) const
+
+{
+  oplist.push_back(CPUI_COPY);
+}
+
+int4 RuleSplitCopy::applyOp(PcodeOp *op,Funcdata &data)
+
+{
+  Datatype *inType = op->getIn(0)->getTypeReadFacing(op);
+  Datatype *outType = op->getOut()->getTypeDefFacing();
+  type_metatype metain = inType->getMetatype();
+  type_metatype metaout = outType->getMetatype();
+  if (metain != TYPE_PARTIALSTRUCT && metaout != TYPE_PARTIALSTRUCT &&
+      metain != TYPE_ARRAY && metaout != TYPE_ARRAY &&
+      metain != TYPE_STRUCT && metaout != TYPE_STRUCT)
+    return false;
+  SplitDatatype splitter(data);
+  if (splitter.splitCopy(op, inType, outType))
+    return 1;
+  return 0;
+}
+
+/// \class RuleSplitLoad
+/// \brief Split LOAD ops based on TypePartialStruct
+///
+/// If more than one logical component of a structure or array is loaded at once,
+/// rewrite the LOAD operator as multiple LOADs.
+void RuleSplitLoad::getOpList(vector<uint4> &oplist) const
+
+{
+  oplist.push_back(CPUI_LOAD);
+}
+
+int4 RuleSplitLoad::applyOp(PcodeOp *op,Funcdata &data)
+
+{
+  Datatype *inType = SplitDatatype::getValueDatatype(op, op->getOut()->getSize(), data.getArch()->types);
+  if (inType == (Datatype *)0)
+    return 0;
+  type_metatype metain = inType->getMetatype();
+  if (metain != TYPE_STRUCT && metain != TYPE_ARRAY && metain != TYPE_PARTIALSTRUCT)
+    return 0;
+  SplitDatatype splitter(data);
+  if (splitter.splitLoad(op, inType))
+    return 1;
+  return 0;
+}
+
+/// \class RuleSplitStore
+/// \brief Split STORE ops based on TypePartialStruct
+///
+/// If more than one logical component of a structure or array is stored at once,
+/// rewrite the STORE operator as multiple STOREs.
+void RuleSplitStore::getOpList(vector<uint4> &oplist) const
+
+{
+  oplist.push_back(CPUI_STORE);
+}
+
+int4 RuleSplitStore::applyOp(PcodeOp *op,Funcdata &data)
+
+{
+  Datatype *outType = SplitDatatype::getValueDatatype(op, op->getIn(2)->getSize(), data.getArch()->types);
+  if (outType == (Datatype *)0)
+    return 0;
+  type_metatype metain = outType->getMetatype();
+  if (metain != TYPE_STRUCT && metain != TYPE_ARRAY && metain != TYPE_PARTIALSTRUCT)
+    return 0;
+  SplitDatatype splitter(data);
+  if (splitter.splitStore(op, outType))
+    return 1;
+  return 0;
 }
 
 /// \class RuleSubNormal
@@ -10123,3 +10249,67 @@ int4 RuleXorSwap::applyOp(PcodeOp *op,Funcdata &data)
   }
   return 0;
 }
+
+/// \class RuleLzcountShiftBool
+/// \brief Simplify equality checks that use lzcount:  `lzcount(X) >> c  =>  X == 0` if X is 2^c bits wide
+///
+/// Some compilers check if a value is equal to zero by checking the most
+/// significant bit in lzcount; for instance on a 32-bit system,
+/// the result of lzcount on zero would have the 5th bit set.
+///  - `lzcount(a ^ 3) >> 5  =>  a ^ 3 == 0  =>  a == 3` (by RuleXorCollapse)
+///  - `lzcount(a - 3) >> 5  =>  a - 3 == 0  =>  a == 3` (by RuleEqual2Zero)
+void RuleLzcountShiftBool::getOpList(vector<uint4> &oplist) const
+
+{
+  oplist.push_back(CPUI_LZCOUNT);
+}
+
+int4 RuleLzcountShiftBool::applyOp(PcodeOp *op,Funcdata &data)
+
+{
+  Varnode *outVn = op->getOut();
+  list<PcodeOp *>::const_iterator iter, iter2;
+  uintb max_return = 8 * op->getIn(0)->getSize();
+  if (popcount(max_return) != 1) {
+    // This rule only makes sense with sizes that are powers of 2; if the maximum value
+    // returned by lzcount was, say, 24, then both 16 >> 4 and 24 >> 4
+    // are 1, and thus the check does not make sense.  (Such processors couldn't
+    // use lzcount for checking equality in any case.)
+    return 0;
+  }
+
+  for(iter=outVn->beginDescend();iter!=outVn->endDescend();++iter) {
+    PcodeOp *baseOp = *iter;
+    if (baseOp->code() != CPUI_INT_RIGHT && baseOp->code() != CPUI_INT_SRIGHT) continue;
+    Varnode *vn1 = baseOp->getIn(1);
+    if (!vn1->isConstant()) continue;
+    uintb shift = vn1->getOffset();
+    if ((max_return >> shift) == 1) {
+      // Becomes a comparison with zero
+      PcodeOp* newOp = data.newOp(2, baseOp->getAddr());
+      data.opSetOpcode(newOp, CPUI_INT_EQUAL);
+      Varnode* b = data.newConstant(op->getIn(0)->getSize(), 0);
+      data.opSetInput(newOp, op->getIn(0), 0);
+      data.opSetInput(newOp, b, 1);
+
+      // CPUI_INT_EQUAL must produce a 1-byte boolean result
+      Varnode* eqResVn = data.newUniqueOut(1, newOp);
+
+      data.opInsertBefore(newOp, baseOp);
+
+      // Because the old output had size op->getIn(0)->getSize(),
+      // we have to guarantee that a Varnode of this size gets outputted
+      // to the descending PcodeOps. This is handled here with CPUI_INT_ZEXT.
+      data.opRemoveInput(baseOp, 1);
+      if (baseOp->getOut()->getSize() == 1)
+	data.opSetOpcode(baseOp, CPUI_COPY);
+      else
+	data.opSetOpcode(baseOp, CPUI_INT_ZEXT);
+      data.opSetInput(baseOp, eqResVn, 0);
+      return 1;
+    }
+  }
+  return 0;
+}
+
+} // End namespace ghidra

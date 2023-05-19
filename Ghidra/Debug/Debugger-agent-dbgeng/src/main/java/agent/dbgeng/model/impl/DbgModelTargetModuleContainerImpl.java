@@ -20,8 +20,10 @@ import java.util.concurrent.CompletableFuture;
 
 import agent.dbgeng.manager.DbgModule;
 import agent.dbgeng.manager.DbgProcess;
+import agent.dbgeng.manager.impl.DbgManagerImpl;
 import agent.dbgeng.model.iface2.DbgModelTargetModule;
 import agent.dbgeng.model.iface2.DbgModelTargetModuleContainer;
+import ghidra.dbg.DebuggerObjectModel.RefreshBehavior;
 import ghidra.dbg.target.*;
 import ghidra.dbg.target.schema.*;
 import ghidra.dbg.target.schema.TargetObjectSchema.ResyncMode;
@@ -48,9 +50,16 @@ public class DbgModelTargetModuleContainerImpl extends DbgModelTargetObjectImpl
 		super(process.getModel(), process, "Modules", "ModuleContainer");
 		this.targetProcess = process;
 		this.process = process.process;
-		if (!getModel().isSuppressDescent()) {
-			requestElements(false);
+		DbgManagerImpl manager = getManager();
+		if (manager.isKernelMode()) {
+			if (!this.process.getId().isSystem()) {
+				return;
+			}
 		}
+		if (getModel().isSuppressDescent()) {
+			return;
+		}
+		requestElements(RefreshBehavior.REFRESH_NEVER);
 	}
 
 	@Override
@@ -99,7 +108,7 @@ public class DbgModelTargetModuleContainerImpl extends DbgModelTargetObjectImpl
 	}
 
 	@Override
-	public CompletableFuture<Void> requestElements(boolean refresh) {
+	public CompletableFuture<Void> requestElements(RefreshBehavior refresh) {
 		List<TargetObject> result = new ArrayList<>();
 		return process.listModules().thenAccept(byName -> {
 			synchronized (this) {

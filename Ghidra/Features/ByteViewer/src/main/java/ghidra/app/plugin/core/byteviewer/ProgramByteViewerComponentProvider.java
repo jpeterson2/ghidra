@@ -31,7 +31,7 @@ import ghidra.app.nav.*;
 import ghidra.app.plugin.core.format.*;
 import ghidra.app.services.ClipboardService;
 import ghidra.app.services.ProgramManager;
-import ghidra.app.util.HighlightProvider;
+import ghidra.app.util.ListingHighlightProvider;
 import ghidra.framework.model.*;
 import ghidra.framework.options.SaveState;
 import ghidra.framework.plugintool.PluginEvent;
@@ -52,7 +52,7 @@ public class ProgramByteViewerComponentProvider extends ByteViewerComponentProvi
 
 	protected DecoratorPanel decorationComponent;
 	private WeakSet<NavigatableRemovalListener> navigationListeners =
-		WeakDataStructureFactory.createSingleThreadAccessWeakSet();
+		WeakDataStructureFactory.createCopyOnWriteWeakSet();
 
 	private CloneByteViewerAction cloneByteViewerAction;
 
@@ -316,7 +316,7 @@ public class ProgramByteViewerComponentProvider extends ByteViewerComponentProvi
 		if (blocks != null && blockNumber >= 0 && blockNumber < blocks.length) {
 			ByteViewerState view = new ByteViewerState(blockSet,
 				new ByteBlockInfo(blocks[blockNumber], blockOffset, column), vp);
-			panel.returnToView(view);
+			panel.restoreView(view);
 		}
 
 	}
@@ -564,9 +564,9 @@ public class ProgramByteViewerComponentProvider extends ByteViewerComponentProvi
 		}
 	}
 
-	protected ByteBlockChangeManager newByteBlockChangeManager(ProgramByteBlockSet blockSet,
+	protected ByteBlockChangeManager newByteBlockChangeManager(ProgramByteBlockSet blocks,
 			ByteBlockChangeManager bbcm) {
-		return new ByteBlockChangeManager(blockSet, bbcm);
+		return new ByteBlockChangeManager(blocks, bbcm);
 	}
 
 	protected ProgramByteBlockSet newByteBlockSet(ByteBlockChangeManager changeManager) {
@@ -627,7 +627,7 @@ public class ProgramByteViewerComponentProvider extends ByteViewerComponentProvi
 		if (blocks != null && blockNumber >= 0 && blockNumber < blocks.length) {
 			ByteViewerState view = new ByteViewerState(blockSet,
 				new ByteBlockInfo(blocks[blockNumber], blockOffset, column), vp);
-			panel.returnToView(view);
+			panel.restoreView(view);
 		}
 	}
 
@@ -787,12 +787,12 @@ public class ProgramByteViewerComponentProvider extends ByteViewerComponentProvi
 	}
 
 	@Override
-	public void removeHighlightProvider(HighlightProvider highlightProvider, Program p) {
+	public void removeHighlightProvider(ListingHighlightProvider highlightProvider, Program p) {
 		// currently unsupported
 	}
 
 	@Override
-	public void setHighlightProvider(HighlightProvider highlightProvider, Program p) {
+	public void setHighlightProvider(ListingHighlightProvider highlightProvider, Program p) {
 		// currently unsupported
 
 	}
