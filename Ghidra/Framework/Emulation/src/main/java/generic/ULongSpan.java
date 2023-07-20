@@ -17,6 +17,7 @@ package generic;
 
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
+//generics
 /**
  * A span of unsigned longs
  * 
@@ -137,6 +138,7 @@ public interface ULongSpan extends Span<Long, ULongSpan> {
 			return doToString();
 		}
 
+		//generics
 		@SuppressWarnings("override.return")
 		@Override
 		public ULongSpan.Domain domain() {
@@ -158,6 +160,7 @@ public interface ULongSpan extends Span<Long, ULongSpan> {
 			return doToString();
 		}
 
+		//generics
 		@SuppressWarnings("return")
 		@Override
 		public Span.Domain<Long, ULongSpan> domain() {
@@ -188,6 +191,7 @@ public interface ULongSpan extends Span<Long, ULongSpan> {
 	 */
 	class DefaultULongSpanMap<V> extends DefaultSpanMap<Long, ULongSpan, V>
 			implements MutableULongSpanMap<V> {
+		//generics
 		@SuppressWarnings("argument")
 		public DefaultULongSpanMap() {
 			super(DOMAIN);
@@ -218,6 +222,7 @@ public interface ULongSpan extends Span<Long, ULongSpan> {
 	 */
 	class DefaultULongSpanSet extends DefaultSpanSet<Long, ULongSpan>
 			implements MutableULongSpanSet {
+		//generics
 		@SuppressWarnings("argument")
 		public DefaultULongSpanSet() {
 			super(DOMAIN);
@@ -229,6 +234,7 @@ public interface ULongSpan extends Span<Long, ULongSpan> {
 	 * 
 	 * @return the length
 	 */
+	//generics
 	@SuppressWarnings("return")
 	default @Unsigned long length() {
 		return max() - min() + 1;

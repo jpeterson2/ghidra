@@ -35,6 +35,7 @@ import org.checkerframework.checker.signedness.qual.Signed;
  *
  * @param <S> the type of an executor state space, internally associated with an address space
  */
+//generics
 @SuppressWarnings("override.param")
 public abstract class AbstractBytesPcodeExecutorStatePiece<S extends BytesPcodeExecutorStateSpace<?>>
 		extends AbstractLongOffsetPcodeExecutorStatePiece<byte[], byte[], S> {
@@ -147,7 +148,7 @@ public abstract class AbstractBytesPcodeExecutorStatePiece<S extends BytesPcodeE
 		space.write(offset, val, 0, size);
 	}
 
-	//@SuppressWarnings({"unsigned.concat", "argument"})
+	//String: string concatenation is guaranteed to be correct here
 	@Override
 	@SuppressWarnings({"unsigned.concat"})
 	protected byte[] getFromSpace(S space, @Unsigned long offset, @Unsigned int size, Reason reason) {
