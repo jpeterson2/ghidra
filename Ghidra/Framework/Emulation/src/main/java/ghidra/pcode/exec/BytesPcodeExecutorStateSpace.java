@@ -26,6 +26,9 @@ import ghidra.program.model.lang.Language;
 import ghidra.program.model.lang.Register;
 import ghidra.util.Msg;
 
+import org.checkerframework.checker.signedness.qual.Unsigned;
+import org.checkerframework.checker.signedness.qual.Signed;
+
 /**
  * A p-code executor state space for storing and retrieving bytes as arrays
  * 
@@ -69,7 +72,7 @@ public class BytesPcodeExecutorStateSpace<B> {
 	 * @param offset the offset
 	 * @param val the value
 	 */
-	public void write(long offset, byte[] val, int srcOffset, int length) {
+	public void write(@Unsigned long offset, byte[] val, int srcOffset, int length) {
 		bytes.putData(offset, val, srcOffset, length);
 	}
 
@@ -88,8 +91,8 @@ public class BytesPcodeExecutorStateSpace<B> {
 	 * @param size the number of bytes to read (the size of the value)
 	 * @return the bytes read
 	 */
-	protected byte[] readBytes(long offset, int size, Reason reason) {
-		byte[] data = new byte[size];
+	protected byte[] readBytes(@Unsigned long offset, @Unsigned int size, Reason reason) {
+		byte[] data = new byte[(@Signed int) size];
 		bytes.getData(offset, data);
 		return data;
 	}
@@ -150,7 +153,7 @@ public class BytesPcodeExecutorStateSpace<B> {
 	 * @param reason the reason for reading state
 	 * @return the bytes read
 	 */
-	public byte[] read(long offset, int size, Reason reason) {
+	public byte[] read(@Unsigned long offset, @Unsigned int size, Reason reason) {
 		if (backing != null) {
 			readUninitializedFromBacking(bytes.getUninitialized(offset, offset + size - 1));
 		}
@@ -164,8 +167,8 @@ public class BytesPcodeExecutorStateSpace<B> {
 	public Map<Register, byte[]> getRegisterValues(List<Register> registers) {
 		Map<Register, byte[]> result = new HashMap<>();
 		for (Register reg : registers) {
-			long min = reg.getAddress().getOffset();
-			long max = min + reg.getNumBytes();
+			long min = (@Unsigned long) reg.getAddress().getOffset(); // out of annotated section
+			long max = min + (@Unsigned long) reg.getNumBytes();
 			if (!bytes.isInitialized(min, max)) {
 				continue;
 			}

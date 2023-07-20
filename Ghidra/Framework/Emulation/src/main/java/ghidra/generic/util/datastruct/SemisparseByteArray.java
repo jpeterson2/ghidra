@@ -26,6 +26,7 @@ import generic.ULongSpan.*;
 import ghidra.util.MathUtilities;
 
 import org.checkerframework.checker.signedness.qual.Unsigned;
+import org.checkerframework.checker.signedness.qual.Signed;
 
 /**
  * A sparse byte array characterized by contiguous dense regions

@@ -31,6 +31,8 @@ import ghidra.util.*;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
 
+import org.checkerframework.checker.signedness.qual.Unsigned;
+
 public class Emulator {
 
 	private final MemoryFaultHandler faultHandler;
@@ -107,7 +109,7 @@ public class Emulator {
 	 */
 	private int getValidPageSize(AddressSpace space) {
 		int ps = 256;	// Minimum page size supported
-		long spaceSize = space.getMaxAddress().getOffset() + 1;	// Number of bytes in the space (0 if 2^64 bytes)
+		long spaceSize = (@Unsigned long) space.getMaxAddress().getOffset() + 1;	// Number of bytes in the space (0 if 2^64 bytes)
 		if ((spaceSize & 0xff) != 0) {
 			Msg.warn(this, "Emulator using page size of 256 bytes for " + space.getName() +
 				" which is NOT a multiple of 256");

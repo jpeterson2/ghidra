@@ -27,11 +27,15 @@ import ghidra.program.model.mem.*;
 import ghidra.program.model.pcode.PcodeOp;
 import ghidra.util.Msg;
 
+import org.checkerframework.checker.signedness.qual.Unsigned;
+import org.checkerframework.checker.signedness.qual.Signed;
+
 /**
  * An abstract p-code executor state piece for storing and retrieving bytes as arrays
  *
  * @param <S> the type of an executor state space, internally associated with an address space
  */
+@SuppressWarnings("override.param")
 public abstract class AbstractBytesPcodeExecutorStatePiece<S extends BytesPcodeExecutorStateSpace<?>>
 		extends AbstractLongOffsetPcodeExecutorStatePiece<byte[], byte[], S> {
 
@@ -69,8 +73,8 @@ public abstract class AbstractBytesPcodeExecutorStatePiece<S extends BytesPcodeE
 		}
 
 		@Override
-		public int getBytes(ByteBuffer buffer, int addressOffset) {
-			byte[] data = source.read(address.getOffset() + addressOffset, buffer.remaining(),
+		public int getBytes(ByteBuffer buffer, @Unsigned int addressOffset) {
+			byte[] data = source.read(((@Unsigned long) address.getOffset()) + addressOffset, buffer.remaining(),
 				Reason.EXECUTE);
 			buffer.put(data);
 			return data.length;
@@ -130,7 +134,7 @@ public abstract class AbstractBytesPcodeExecutorStatePiece<S extends BytesPcodeE
 	}
 
 	@Override
-	protected void setInSpace(S space, long offset, int size, byte[] val) {
+	protected void setInSpace(S space, @Unsigned long offset, int size, byte[] val) {
 		if (val.length > size) {
 			throw new IllegalArgumentException(
 				"Value is larger than variable: " + val.length + " > " + size);
@@ -143,12 +147,14 @@ public abstract class AbstractBytesPcodeExecutorStatePiece<S extends BytesPcodeE
 		space.write(offset, val, 0, size);
 	}
 
+	//@SuppressWarnings({"unsigned.concat", "argument"})
 	@Override
-	protected byte[] getFromSpace(S space, long offset, int size, Reason reason) {
+	@SuppressWarnings({"unsigned.concat"})
+	protected byte[] getFromSpace(S space, @Unsigned long offset, @Unsigned int size, Reason reason) {
 		byte[] read = space.read(offset, size, reason);
 		if (read.length != size) {
 			throw new AccessPcodeExecutionException("Incomplete read (" + read.length +
-				" of " + size + " bytes)");
+				" of " + (@Signed int) size + " bytes)");
 		}
 		return read;
 	}

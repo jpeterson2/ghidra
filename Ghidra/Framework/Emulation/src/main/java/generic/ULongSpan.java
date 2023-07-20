@@ -25,6 +25,7 @@ import org.checkerframework.checker.signedness.qual.Unsigned;
  * consistent behavior in client code, comparisons and manipulations should be performed via
  * {@link #DOMAIN}, where applicable.
  */
+@SuppressWarnings("type.argument")
 public interface ULongSpan extends Span<Long, ULongSpan> {
 	ULongSpan.Domain DOMAIN = ULongSpan.Domain.INSTANCE;
 	ULongSpan.Empty EMPTY = Empty.INSTANCE;
@@ -112,12 +113,12 @@ public interface ULongSpan extends Span<Long, ULongSpan> {
 		}
 
 		@Override
-		public @Unsigned Long inc(Long n) {
+		public @Unsigned Long inc(@Unsigned Long n) {
 			return n + 1;
 		}
 
 		@Override
-		public @Unsigned Long dec(Long n) {
+		public @Unsigned Long dec(@Unsigned Long n) {
 			return n - 1;
 		}
 	}
@@ -136,13 +137,14 @@ public interface ULongSpan extends Span<Long, ULongSpan> {
 			return doToString();
 		}
 
+		@SuppressWarnings("override.return")
 		@Override
 		public ULongSpan.Domain domain() {
 			return DOMAIN;
 		}
 
 		@Override
-		public long length() {
+		public @Unsigned long length() {
 			return 0;
 		}
 	}
@@ -156,6 +158,7 @@ public interface ULongSpan extends Span<Long, ULongSpan> {
 			return doToString();
 		}
 
+		@SuppressWarnings("return")
 		@Override
 		public Span.Domain<Long, ULongSpan> domain() {
 			return DOMAIN;
@@ -185,6 +188,7 @@ public interface ULongSpan extends Span<Long, ULongSpan> {
 	 */
 	class DefaultULongSpanMap<V> extends DefaultSpanMap<Long, ULongSpan, V>
 			implements MutableULongSpanMap<V> {
+		@SuppressWarnings("argument")
 		public DefaultULongSpanMap() {
 			super(DOMAIN);
 		}
@@ -214,6 +218,7 @@ public interface ULongSpan extends Span<Long, ULongSpan> {
 	 */
 	class DefaultULongSpanSet extends DefaultSpanSet<Long, ULongSpan>
 			implements MutableULongSpanSet {
+		@SuppressWarnings("argument")
 		public DefaultULongSpanSet() {
 			super(DOMAIN);
 		}
@@ -224,6 +229,7 @@ public interface ULongSpan extends Span<Long, ULongSpan> {
 	 * 
 	 * @return the length
 	 */
+	@SuppressWarnings("return")
 	default @Unsigned long length() {
 		return max() - min() + 1;
 	}

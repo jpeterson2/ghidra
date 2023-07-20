@@ -37,6 +37,7 @@ import generic.ULongSpan.*;
  * @param <N> the type of endpoints
  * @param <S> the type of spans (recursive)
  */
+@SuppressWarnings({"signedness"}) // String
 public interface Span<N, S extends Span<N, S>> extends Comparable<S> {
 	/**
 	 * The (discrete) domain of endpoints for a span
