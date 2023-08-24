@@ -279,6 +279,7 @@ public class CreateFunctionCmd extends BackgroundCommand {
 				// if we are not recreating the function,
 				//  then don't continue because there is already a function here.
 				if (!recreateFunction) {
+					entry = functionContaining.getEntryPoint(); // preserve entry
 					long bodySize = functionContaining.getBody().getNumAddresses();
 					if (bodySize != 1) {
 						return false;
@@ -331,7 +332,7 @@ public class CreateFunctionCmd extends BackgroundCommand {
 
 		Map<Function, AddressSetView> bodyChangeMap = new HashMap<>();
 		// If I ain't got nobody left after extracting overlapping functions
-		if (body.isEmpty()) {
+		if (body.isEmpty() || !body.contains(entry)) {
 			// try subtracting this body from existing functions
 			//   need to compute a bodyChangeMap if affecting other functions
 			//   in case creation of this function fails
@@ -409,7 +410,7 @@ public class CreateFunctionCmd extends BackgroundCommand {
 			throws CancelledException, OverlappingFunctionException {
 		Iterator<Function> iter = program.getFunctionManager().getFunctionsOverlapping(body);
 		while (iter.hasNext()) {
-			monitor.checkCanceled();
+			monitor.checkCancelled();
 			Function elem = iter.next();
 			AddressSetView funcBody = elem.getBody();
 			if (funcBody.contains(entry)) {
@@ -440,7 +441,7 @@ public class CreateFunctionCmd extends BackgroundCommand {
 			TaskMonitor monitor) throws CancelledException {
 		Iterator<Function> iter = program.getFunctionManager().getFunctionsOverlapping(body);
 		while (iter.hasNext()) {
-			monitor.checkCanceled();
+			monitor.checkCancelled();
 			Function elem = iter.next();
 			if (elem.getEntryPoint().equals(entry)) {
 				// if finding the entrypoint, need to redefine the functions body.
@@ -545,26 +546,29 @@ public class CreateFunctionCmd extends BackgroundCommand {
 	}
 
 	/**
-	 * Follow flow back from the address trying to find an existing function this fragment belongs to
+	 * Follow flow back from the address trying to find an existing function or reasonable entry point 
+	 * that flows to the specified bodyAddr.  Search is very limited and gives preference to a contiguous 
+	 * fall-through flow.
 	 *
 	 * @param bodyAddr address that should be in the body of a function
-	 * @return
+	 * @return a possible entry point that flows to bodyAddr or null if a reasonable entry not found.
 	 */
 	private Address findFunctionEntry(Address bodyAddr) {
-		Address entry = bodyAddr;
+
+		AddressSpace space = bodyAddr.getAddressSpace();
 
 		// if there is no function, then just follow some flow backwards
 		AddressSet subSet = new AddressSet();
-		Instruction followInstr = program.getListing().getInstructionContaining(entry);
-		while (followInstr != null && !subSet.contains(followInstr.getMinAddress())) {
+		Instruction followInstr = program.getListing().getInstructionContaining(bodyAddr);
+		while (followInstr != null && !subSet.contains(followInstr.getMinAddress()) &&
+			followInstr.getMinAddress().getAddressSpace() == space) {
 			subSet.addRange(followInstr.getMinAddress(), followInstr.getMaxAddress());
 
 			// see if we have wandered backward into a function
 			Function func =
 				program.getFunctionManager().getFunctionContaining(followInstr.getMinAddress());
 			if (func != null) {
-				entry = func.getEntryPoint();
-				break;
+				return func.getEntryPoint();
 			}
 			Address fallFrom = followInstr.getFallFrom();
 			if (fallFrom == null) {
@@ -572,17 +576,17 @@ public class CreateFunctionCmd extends BackgroundCommand {
 				if (!iter.hasNext()) {
 					break;
 				}
+				// TODO: only considering one reference which may not be a flow
 				Reference ref = iter.next();
 				if (ref.getReferenceType().isCall()) {
-					entry = fallFrom;
-					break;
+					return followInstr.getMinAddress(); // may not be in a function body
 				}
 				fallFrom = ref.getFromAddress();
 			}
 			followInstr = program.getListing().getInstructionContaining(fallFrom);
 		}
 
-		return entry;
+		return null;
 	}
 
 	/**
@@ -636,8 +640,8 @@ public class CreateFunctionCmd extends BackgroundCommand {
 
 		FlowType[] dontFollow = { RefType.COMPUTED_CALL, RefType.CONDITIONAL_CALL,
 			RefType.UNCONDITIONAL_CALL, RefType.INDIRECTION };
-		AddressSet start = new AddressSet(entry, entry);
-		FollowFlow flow = new FollowFlow(program, start, dontFollow, includeOtherFunctions);
+		FollowFlow flow =
+			new FollowFlow(program, entry, dontFollow, includeOtherFunctions, false, true);
 		return flow.getFlowAddressSet(monitor);
 	}
 
@@ -705,7 +709,7 @@ public class CreateFunctionCmd extends BackgroundCommand {
 			Iterator<Function> iter = program.getFunctionManager().getFunctionsOverlapping(newBody);
 
 			while (iter.hasNext()) {
-				monitor.checkCanceled();
+				monitor.checkCancelled();
 				Function elem = iter.next();
 				if (elem.getEntryPoint().equals(entry)) {
 					// if finding the entrypoint, need to redefine the functions body.

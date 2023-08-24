@@ -46,7 +46,7 @@ public class PcodeExecutor<T> {
 	protected final PcodeExecutorState<T> state;
 	protected final Reason reason;
 	protected final Register pc;
-	protected final int pointerSize;
+	protected final int pcSize;
 
 	/**
 	 * Construct an executor with the given bindings
@@ -64,7 +64,7 @@ public class PcodeExecutor<T> {
 		this.reason = reason;
 
 		this.pc = language.getProgramCounter();
-		this.pointerSize = language.getDefaultSpace().getPointerSize();
+		this.pcSize = pc != null ? pc.getNumBytes() : language.getDefaultSpace().getPointerSize();
 	}
 
 	/**
@@ -411,7 +411,9 @@ public class PcodeExecutor<T> {
 	 * @param frame the frame to finish
 	 */
 	protected void branchToOffset(T offset, PcodeFrame frame) {
-		state.setVar(pc, offset);
+		T truncOff = arithmetic.unaryOp(PcodeOp.COPY, pc.getMinimumByteSize(),
+			(int) arithmetic.sizeOf(offset), offset);
+		state.setVar(pc, truncOff);
 		frame.finishAsBranch();
 	}
 
@@ -431,7 +433,7 @@ public class PcodeExecutor<T> {
 			frame.branch((int) target.getOffset());
 		}
 		else {
-			branchToOffset(arithmetic.fromConst(target.getOffset(), pointerSize), frame);
+			branchToOffset(arithmetic.fromConst(target.getOffset(), pcSize), frame);
 			branchToAddress(target);
 		}
 	}
@@ -510,7 +512,7 @@ public class PcodeExecutor<T> {
 	 */
 	public void executeCall(PcodeOp op, PcodeFrame frame, PcodeUseropLibrary<T> library) {
 		Address target = op.getInput(0).getAddress();
-		branchToOffset(arithmetic.fromConst(target.getOffset(), pointerSize), frame);
+		branchToOffset(arithmetic.fromConst(target.getOffset(), pcSize), frame);
 		branchToAddress(target);
 	}
 

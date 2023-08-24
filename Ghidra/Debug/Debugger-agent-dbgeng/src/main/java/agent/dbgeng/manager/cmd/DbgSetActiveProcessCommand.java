@@ -93,13 +93,12 @@ public class DbgSetActiveProcessCommand extends AbstractDbgCommand<Void> {
 					offset = process.getOffset();
 					if (offset == null || offset == 0L) {
 						DebugControl control = manager.getControl();
-						control.execute("!process "+Long.toHexString(process.getPid()));		
+						control.execute("!process "+Long.toHexString(process.getPid())+" 0");		
 					}
-				} 
-				else {
+				} else {
 					so.setCurrentProcessId(id);
 					DebugProcessId currentProcessId = so.getCurrentProcessId();
-					if (id.id != currentProcessId.id) {
+					if (!id.id().equals(currentProcessId.id())) {
 						so.setCurrentProcessId(id);
 					}
 				}

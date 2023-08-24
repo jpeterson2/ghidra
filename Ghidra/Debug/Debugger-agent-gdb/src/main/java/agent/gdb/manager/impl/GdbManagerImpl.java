@@ -38,8 +38,10 @@ import agent.gdb.manager.evt.*;
 import agent.gdb.manager.impl.cmd.*;
 import agent.gdb.manager.impl.cmd.GdbConsoleExecCommand.CompletesWithRunning;
 import agent.gdb.manager.parsing.GdbMiParser;
+import agent.gdb.manager.parsing.GdbMiParser.GdbMiFieldList;
 import agent.gdb.manager.parsing.GdbParsingUtils.GdbParseError;
 import agent.gdb.pty.*;
+import agent.gdb.pty.PtyChild.Echo;
 import agent.gdb.pty.windows.AnsiBufferedInputStream;
 import ghidra.GhidraApplicationLayout;
 import ghidra.async.*;
@@ -652,7 +654,9 @@ public class GdbManagerImpl implements GdbManager {
 		if (gdbCmd != null) {
 			iniThread = new PtyThread(ptyFactory.openpty(), Channel.STDOUT, null);
 
-			gdb = iniThread.pty.getChild().session(fullargs.toArray(new String[] {}), null);
+			Msg.info(this, "Starting gdb with: " + fullargs);
+			gdb =
+				iniThread.pty.getChild().session(fullargs.toArray(new String[] {}), null, Echo.OFF);
 			gdbWaiter = new Thread(this::waitGdbExit, "GDB WaitExit");
 			gdbWaiter.start();
 
@@ -675,7 +679,7 @@ public class GdbManagerImpl implements GdbManager {
 					cliThread.writer.print("set pagination off" + newLine);
 					String ptyName;
 					try {
-						ptyName = Objects.requireNonNull(mi2Pty.getChild().nullSession());
+						ptyName = Objects.requireNonNull(mi2Pty.getChild().nullSession(Echo.OFF));
 					}
 					catch (UnsupportedOperationException e) {
 						throw new IOException(
@@ -705,7 +709,7 @@ public class GdbManagerImpl implements GdbManager {
 		}
 		else {
 			Pty mi2Pty = ptyFactory.openpty();
-			String mi2PtyName = mi2Pty.getChild().nullSession();
+			String mi2PtyName = mi2Pty.getChild().nullSession(Echo.OFF);
 			Msg.info(this, "Agent is waiting for GDB/MI v2 interpreter at " + mi2PtyName);
 			mi2Thread = new PtyThread(mi2Pty, Channel.STDOUT, Interpreter.MI2);
 			mi2Thread.setName("GDB Read MI2");
@@ -1445,6 +1449,21 @@ public class GdbManagerImpl implements GdbManager {
 		}
 	}
 
+	private void emitNewThreadFrameIfSpecified(GdbCommandDoneEvent evt) {
+		Integer newTid = evt.checkNewThreadId();
+		if (newTid == null) {
+			return;
+		}
+		GdbThreadImpl thread = threads.get(newTid);
+		if (thread == null) {
+			return;
+		}
+		GdbMiFieldList newFrame = evt.checkFrame();
+		GdbStackFrameImpl frame =
+			newFrame == null ? null : GdbStackFrameImpl.fromFieldList(thread, newFrame);
+		event(() -> listenersEvent.fire.threadSelected(thread, frame, evt), "command-done");
+	}
+
 	/**
 	 * Handler for "^done"
 	 * 
@@ -1452,6 +1471,7 @@ public class GdbManagerImpl implements GdbManager {
 	 * @param v nothing
 	 */
 	protected void processCommandDone(GdbCommandDoneEvent evt, Void v) {
+		emitNewThreadFrameIfSpecified(evt);
 		checkClaimed(evt);
 	}
 
@@ -1781,6 +1801,10 @@ public class GdbManagerImpl implements GdbManager {
 		return runningInterpreter;
 	}
 
+	private boolean isProbablyValid(String out) {
+		return out.contains("->0x");
+	}
+
 	private CompletableFuture<Map.Entry<String, String[]>> nextMaintInfoSections(
 			GdbInferiorImpl inferior, String cmds[], List<String[]> results) {
 		if (results.size() == cmds.length) {
@@ -1795,7 +1819,7 @@ public class GdbManagerImpl implements GdbManager {
 		String cmd = cmds[results.size()];
 		return inferior.consoleCapture(cmd, CompletesWithRunning.CANNOT).thenCompose(out -> {
 			String[] lines = out.split("\n");
-			if (lines.length >= 10) {
+			if (isProbablyValid(out)) {
 				return CompletableFuture.completedFuture(Map.entry(cmd, lines));
 			}
 			results.add(lines);
@@ -1824,7 +1848,7 @@ public class GdbManagerImpl implements GdbManager {
 			inferior.consoleCapture(maintInfoSectionsCmd, CompletesWithRunning.CANNOT);
 		return futureOut.thenCompose(out -> {
 			String[] lines = out.split("\n");
-			if (lines.length >= 10) {
+			if (isProbablyValid(out)) {
 				return CompletableFuture.completedFuture(lines);
 			}
 			CompletableFuture<Entry<String, String[]>> futureBest = nextMaintInfoSections(inferior,
@@ -1888,5 +1912,11 @@ public class GdbManagerImpl implements GdbManager {
 			}
 		}
 		return null;
+	}
+
+	public void logInfo(String string) {
+		if (LOG_IO) {
+			DBG_LOG.println("INFO: " + string);
+		}
 	}
 }

@@ -19,7 +19,6 @@ import java.util.List;
 
 import ghidra.app.plugin.processors.sleigh.SleighLanguage;
 import ghidra.pcode.emu.DefaultPcodeThread.PcodeEmulationLibrary;
-import ghidra.pcode.emu.PcodeMachine.SwiMode;
 import ghidra.pcode.exec.*;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.lang.Register;
@@ -198,6 +197,13 @@ public interface PcodeThread<T> {
 	void skipPcodeOp();
 
 	/**
+	 * Apply a patch to the emulator
+	 * 
+	 * @param sleigh a line of sleigh semantic source to execute (excluding the final semicolon)
+	 */
+	void stepPatch(String sleigh);
+
+	/**
 	 * Get the current frame, if present
 	 * 
 	 * <p>
@@ -285,6 +291,13 @@ public interface PcodeThread<T> {
 	 * {@link #finishInstruction()} or {@link #dropInstruction()}.
 	 */
 	void setSuspended(boolean suspended);
+
+	/**
+	 * Check the suspension state of the thread's executor
+	 * 
+	 * @return true if suspended
+	 */
+	boolean isSuspended();
 
 	/**
 	 * Get the thread's Sleigh language (processor model)

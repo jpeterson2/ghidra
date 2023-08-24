@@ -25,6 +25,7 @@ import ghidra.program.model.lang.Language;
 import ghidra.program.model.lang.Register;
 import ghidra.program.model.mem.*;
 import ghidra.program.model.pcode.PcodeOp;
+import ghidra.program.model.pcode.Varnode;
 import ghidra.util.Msg;
 
 import org.checkerframework.checker.signedness.qual.Signed;
@@ -42,19 +43,24 @@ public abstract class AbstractBytesPcodeExecutorStatePiece<S extends BytesPcodeE
 	/**
 	 * A memory buffer bound to a given space in this state
 	 */
-	protected class StateMemBuffer implements MemBufferAdapter {
+	protected class StateMemBuffer implements MemBufferMixin {
 		protected final Address address;
 		protected final BytesPcodeExecutorStateSpace<?> source;
+		protected final Reason reason;
 
 		/**
 		 * Construct a buffer bound to the given space, at the given address
 		 * 
 		 * @param address the address
 		 * @param source the space
+		 * @param reason the reason this buffer reads from the state, as in
+		 *            {@link PcodeExecutorStatePiece#getVar(Varnode, Reason)}
 		 */
-		public StateMemBuffer(Address address, BytesPcodeExecutorStateSpace<?> source) {
+		public StateMemBuffer(Address address, BytesPcodeExecutorStateSpace<?> source,
+				Reason reason) {
 			this.address = address;
 			this.source = source;
+			this.reason = reason;
 		}
 
 		@Override
@@ -74,8 +80,8 @@ public abstract class AbstractBytesPcodeExecutorStatePiece<S extends BytesPcodeE
 
 		@Override
 		public int getBytes(ByteBuffer buffer, @Unsigned int addressOffset) {
-			byte[] data = source.read(((@Unsigned long) address.getOffset()) + addressOffset, buffer.remaining(),
-				Reason.EXECUTE);
+			byte[] data =
+				source.read(((@Unsigned long) address.getOffset()) + addressOffset, buffer.remaining(), reason);
 			buffer.put(data);
 			return data.length;
 		}
@@ -166,7 +172,8 @@ public abstract class AbstractBytesPcodeExecutorStatePiece<S extends BytesPcodeE
 
 	@Override
 	public MemBuffer getConcreteBuffer(Address address, PcodeArithmetic.Purpose purpose) {
-		return new StateMemBuffer(address, getForSpace(address.getAddressSpace(), false));
+		return new StateMemBuffer(address, getForSpace(address.getAddressSpace(), false),
+			purpose.reason());
 	}
 
 	@Override
