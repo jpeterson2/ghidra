@@ -33,6 +33,7 @@ checkerFramework {
     'org.checkerframework.checker.signedness.SignednessChecker'
   ]
   extraJavacArgs = [
+    '-AshowPrefixInWarningMessages',
     '-Awarnunneededsuppressions',
   ]
 }

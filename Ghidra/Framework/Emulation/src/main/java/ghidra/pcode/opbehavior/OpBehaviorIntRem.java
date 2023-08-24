@@ -15,6 +15,8 @@
  */
 package ghidra.pcode.opbehavior;
 
+import org.checkerframework.checker.signedness.qual.Unsigned;
+
 import java.math.BigInteger;
 
 import ghidra.pcode.error.LowlevelError;
@@ -27,7 +29,7 @@ public class OpBehaviorIntRem extends BinaryOpBehavior {
 	}
 
 	@Override
-	public long evaluateBinary(int sizeout, int sizein, long in1, long in2) {
+	public @Unsigned long evaluateBinary(int sizeout, int sizein, @Unsigned long in1, @Unsigned long in2) {
 		if (in2 == 0) {
 			throw new LowlevelError("Remainder by 0");
 		}

@@ -16,6 +16,8 @@
  */
 package ghidra.pcode.opbehavior;
 
+import org.checkerframework.checker.signedness.qual.Unsigned;
+
 import ghidra.program.model.pcode.PcodeOp;
 
 import java.math.BigInteger;
@@ -26,8 +28,9 @@ public class OpBehaviorIntSborrow extends BinaryOpBehavior {
 		super(PcodeOp.INT_SBORROW);
 	}
 
+	@SuppressWarnings("signedness:shift.signed")  // get sign bit
 	@Override
-	public long evaluateBinary(int sizeout, int sizein, long in1, long in2) {
+	public @Unsigned long evaluateBinary(int sizeout, int sizein, @Unsigned long in1, @Unsigned long in2) {
 		long res = in1 - in2;
 
 		int a = (int) (in1 >> (sizein * 8 - 1)) & 1; // Grab sign bit

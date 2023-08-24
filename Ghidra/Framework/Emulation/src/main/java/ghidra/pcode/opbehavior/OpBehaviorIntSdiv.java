@@ -16,6 +16,8 @@
  */
 package ghidra.pcode.opbehavior;
 
+import org.checkerframework.checker.signedness.qual.Unsigned;
+
 import ghidra.pcode.error.LowlevelError;
 import ghidra.pcode.utils.Utils;
 import ghidra.program.model.pcode.PcodeOp;
@@ -29,7 +31,7 @@ public class OpBehaviorIntSdiv extends BinaryOpBehavior {
 	}
 
 	@Override
-	public long evaluateBinary(int sizeout, int sizein, long in1, long in2) {
+	public @Unsigned long evaluateBinary(int sizeout, int sizein, @Unsigned long in1, @Unsigned long in2) {
 		if (in2 == 0)
 			throw new LowlevelError("Divide by 0");
 		long num = in1; // Convert to signed

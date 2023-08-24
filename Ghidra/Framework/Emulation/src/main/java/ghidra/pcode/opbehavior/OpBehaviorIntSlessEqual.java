@@ -16,6 +16,8 @@
  */
 package ghidra.pcode.opbehavior;
 
+import org.checkerframework.checker.signedness.qual.Unsigned;
+
 import ghidra.pcode.utils.Utils;
 import ghidra.program.model.pcode.PcodeOp;
 
@@ -27,8 +29,9 @@ public class OpBehaviorIntSlessEqual extends BinaryOpBehavior {
 		super(PcodeOp.INT_SLESSEQUAL);
 	}
 
+        @SuppressWarnings("signedness:comparison.unsignedlhs")  // accounts for sign pit
 	@Override
-	public long evaluateBinary(int sizeout, int sizein, long in1, long in2) {
+	public @Unsigned long evaluateBinary(int sizeout, int sizein, @Unsigned long in1, @Unsigned long in2) {
 		long res, mask, bit1, bit2;
 
 		if (sizein <= 0)

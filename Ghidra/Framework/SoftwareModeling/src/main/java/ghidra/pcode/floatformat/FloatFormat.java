@@ -15,6 +15,7 @@
  */
 package ghidra.pcode.floatformat;
 
+import org.checkerframework.checker.signedness.qual.Unsigned;
 import java.math.*;
 
 import javax.help.UnsupportedOperationException;
@@ -954,7 +955,8 @@ public class FloatFormat {
 		return res;
 	}
 
-	public long opAdd(long a, long b) { // a + b
+        // Actually not @Unsigned, but treated as bits.
+	public @Unsigned long opAdd(@Unsigned long a, @Unsigned long b) { // a + b
 		double val1 = decodeHostFloat(a);
 		double val2 = decodeHostFloat(b);
 		return getEncoding(val1 + val2);

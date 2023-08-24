@@ -16,6 +16,8 @@
  */
 package ghidra.pcode.opbehavior;
 
+import org.checkerframework.checker.signedness.qual.Unsigned;
+
 import ghidra.pcode.utils.Utils;
 import ghidra.program.model.pcode.PcodeOp;
 import ghidra.util.exception.AssertException;
@@ -29,7 +31,7 @@ public class OpBehaviorIntSright extends BinaryOpBehavior {
 	}
 
 	@Override
-	public long evaluateBinary(int sizeout, int sizein, long in1, long in2) {
+	public @Unsigned long evaluateBinary(int sizeout, int sizein, @Unsigned long in1, @Unsigned long in2) {
 		long maxShift = (sizein * 8) - 1;
 		if (in2 < 0 || in2 > maxShift) {
 			if (Utils.signbit_negative(in1, sizein)) {

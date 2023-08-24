@@ -16,6 +16,8 @@
  */
 package ghidra.pcode.opbehavior;
 
+import org.checkerframework.checker.signedness.qual.Unsigned;
+
 import ghidra.pcode.floatformat.FloatFormat;
 import ghidra.pcode.floatformat.FloatFormatFactory;
 import ghidra.program.model.pcode.PcodeOp;
@@ -29,7 +31,7 @@ public class OpBehaviorFloatDiv extends BinaryOpBehavior {
 	}
 
 	@Override
-	public long evaluateBinary(int sizeout, int sizein, long in1, long in2) {
+	public @Unsigned long evaluateBinary(int sizeout, int sizein, @Unsigned long in1, @Unsigned long in2) {
 		FloatFormat format = FloatFormatFactory.getFloatFormat(sizein);
 		return format.opDiv(in1, in2);
 	}

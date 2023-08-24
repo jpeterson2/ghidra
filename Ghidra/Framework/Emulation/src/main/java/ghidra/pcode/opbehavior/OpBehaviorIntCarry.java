@@ -15,6 +15,8 @@
  */
 package ghidra.pcode.opbehavior;
 
+import org.checkerframework.checker.signedness.qual.Unsigned;
+
 import java.math.BigInteger;
 
 import ghidra.pcode.utils.Utils;
@@ -28,7 +30,7 @@ public class OpBehaviorIntCarry extends BinaryOpBehavior {
 	}
 
 	@Override
-	public long evaluateBinary(int sizeout, int sizein, long in1, long in2) {
+	public @Unsigned long evaluateBinary(int sizeout, int sizein, @Unsigned long in1, @Unsigned long in2) {
 		return (Long.compareUnsigned(in1, (in1 + in2) & Utils.calc_mask(sizein)) > 0) ? 1 : 0;
 	}
 
