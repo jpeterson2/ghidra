@@ -15,7 +15,7 @@
  */
 plugins {
     // Checker Framework pluggable type-checking
-    id 'org.checkerframework' version '0.6.25'
+    id 'org.checkerframework' version '0.6.30'
 }
 
 apply from: "${rootProject.projectDir}/gradle/javaProject.gradle"
@@ -31,6 +31,9 @@ apply plugin: 'org.checkerframework'
 checkerFramework {
   checkers = [
     'org.checkerframework.checker.signedness.SignednessChecker'
+  ]
+  extraJavacArgs = [
+    '-Awarnunneededsuppressions',
   ]
 }
 
