@@ -27,16 +27,15 @@ import ghidra.program.model.mem.*;
 import ghidra.program.model.pcode.PcodeOp;
 import ghidra.util.Msg;
 
-import org.checkerframework.checker.signedness.qual.Unsigned;
 import org.checkerframework.checker.signedness.qual.Signed;
+import org.checkerframework.checker.signedness.qual.Unsigned;
 
 /**
  * An abstract p-code executor state piece for storing and retrieving bytes as arrays
  *
  * @param <S> the type of an executor state space, internally associated with an address space
  */
-//generics
-@SuppressWarnings("override.param")
+@SuppressWarnings("signedness:override.param") // generics
 public abstract class AbstractBytesPcodeExecutorStatePiece<S extends BytesPcodeExecutorStateSpace<?>>
 		extends AbstractLongOffsetPcodeExecutorStatePiece<byte[], byte[], S> {
 
@@ -150,7 +149,7 @@ public abstract class AbstractBytesPcodeExecutorStatePiece<S extends BytesPcodeE
 
 	//String: string concatenation is guaranteed to be correct here
 	@Override
-	@SuppressWarnings({"unsigned.concat"})
+	@SuppressWarnings("signedness:unsigned.concat")
 	protected byte[] getFromSpace(S space, @Unsigned long offset, @Unsigned int size, Reason reason) {
 		byte[] read = space.read(offset, size, reason);
 		if (read.length != size) {

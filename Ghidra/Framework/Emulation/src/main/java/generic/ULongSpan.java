@@ -26,7 +26,7 @@ import org.checkerframework.checker.signedness.qual.Unsigned;
  * consistent behavior in client code, comparisons and manipulations should be performed via
  * {@link #DOMAIN}, where applicable.
  */
-@SuppressWarnings("type.argument")
+@SuppressWarnings("signedness:type.argument")
 public interface ULongSpan extends Span<Long, ULongSpan> {
 	ULongSpan.Domain DOMAIN = ULongSpan.Domain.INSTANCE;
 	ULongSpan.Empty EMPTY = Empty.INSTANCE;
@@ -138,8 +138,7 @@ public interface ULongSpan extends Span<Long, ULongSpan> {
 			return doToString();
 		}
 
-		//generics
-		@SuppressWarnings("override.return")
+		@SuppressWarnings("signedness:override.return") // generics
 		@Override
 		public ULongSpan.Domain domain() {
 			return DOMAIN;
@@ -160,8 +159,7 @@ public interface ULongSpan extends Span<Long, ULongSpan> {
 			return doToString();
 		}
 
-		//generics
-		@SuppressWarnings("return")
+		@SuppressWarnings("signedness:return") // generics
 		@Override
 		public Span.Domain<Long, ULongSpan> domain() {
 			return DOMAIN;
@@ -191,8 +189,7 @@ public interface ULongSpan extends Span<Long, ULongSpan> {
 	 */
 	class DefaultULongSpanMap<V> extends DefaultSpanMap<Long, ULongSpan, V>
 			implements MutableULongSpanMap<V> {
-		//generics
-		@SuppressWarnings("argument")
+		@SuppressWarnings("signedness:argument") //generics
 		public DefaultULongSpanMap() {
 			super(DOMAIN);
 		}
@@ -222,8 +219,7 @@ public interface ULongSpan extends Span<Long, ULongSpan> {
 	 */
 	class DefaultULongSpanSet extends DefaultSpanSet<Long, ULongSpan>
 			implements MutableULongSpanSet {
-		//generics
-		@SuppressWarnings("argument")
+		@SuppressWarnings("signedness:argument")  //generics
 		public DefaultULongSpanSet() {
 			super(DOMAIN);
 		}
@@ -234,8 +230,7 @@ public interface ULongSpan extends Span<Long, ULongSpan> {
 	 * 
 	 * @return the length
 	 */
-	//generics
-	@SuppressWarnings("return")
+	@SuppressWarnings("signedness:return")	//generics
 	default @Unsigned long length() {
 		return max() - min() + 1;
 	}

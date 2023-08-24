@@ -344,8 +344,7 @@ public abstract class AnnotatedPcodeUseropLibrary<T> implements PcodeUseropLibra
 			}
 		}
 
-		//generics
-		@SuppressWarnings({"signedness"})
+		@SuppressWarnings({"signedness"}) // generics
 		@Override
 		protected void placeInputs(PcodeExecutor<T> executor, List<Object> args,
 				List<Varnode> inVars) {
@@ -425,8 +424,7 @@ public abstract class AnnotatedPcodeUseropLibrary<T> implements PcodeUseropLibra
 			}
 		}
 
-		//generics
-		@SuppressWarnings({"signedness"})
+		@SuppressWarnings({"signedness"}) // generics
 		protected Object[] readVars(PcodeExecutorState<T> state, List<Varnode> vars,
 				Reason reason) {
 			Object[] vals = (Object[]) Array.newInstance(opRawType, vars.size());
